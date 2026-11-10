@@ -1,0 +1,78 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+AspectRatio = Literal["1:1", "4:3", "3:4", "16:9", "9:16"]
+
+RATIO_DIMENSIONS: dict[str, tuple[int, int]] = {
+    "1:1": (1024, 1024),
+    "4:3": (1280, 960),
+    "3:4": (960, 1280),
+    "16:9": (1344, 768),
+    "9:16": (768, 1344),
+}
+
+
+class GenerationCreate(BaseModel):
+    prompt: str = Field(min_length=3, max_length=2000)
+    negative_prompt: str | None = Field(default=None, max_length=1000)
+    style: str = Field(default="cinematic", min_length=1, max_length=50)
+    aspect_ratio: AspectRatio = "1:1"
+    enhance_prompt: bool = True
+    seed: int | None = Field(default=None, ge=0, le=2_147_483_647)
+
+    @field_validator("prompt", "style")
+    @classmethod
+    def strip_required(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("不能为空")
+        return value
+
+    @field_validator("negative_prompt")
+    @classmethod
+    def strip_optional(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class GenerationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    prompt: str
+    enhanced_prompt: str | None
+    negative_prompt: str | None
+    style: str
+    aspect_ratio: str
+    width: int
+    height: int
+    seed: int | None
+    status: Literal["pending", "processing", "completed", "failed"]
+    provider: str
+    model: str
+    image_url: str | None
+    error_message: str | None
+    created_at: datetime
+    completed_at: datetime | None
+
+
+class GenerationList(BaseModel):
+    items: list[GenerationRead]
+    total: int
+    limit: int
+    offset: int
+
+
+class PublicConfig(BaseModel):
+    app_name: str
+    llm_model: str
+    llm_configured: bool
+    image_provider: str
+    image_model: str
+    supported_ratios: list[str]
