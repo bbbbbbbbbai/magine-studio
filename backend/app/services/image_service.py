@@ -30,8 +30,16 @@ def _extension_for_content_type(content_type: str) -> str:
 
 
 class ImageGenerator:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+    ) -> None:
         self.settings = settings
+        self.provider = provider or settings.image_provider
+        self.model = model or settings.image_model
 
     async def generate(
         self,
@@ -44,7 +52,7 @@ class ImageGenerator:
     ) -> GeneratedImage:
         timeout = httpx.Timeout(self.settings.image_timeout_seconds, connect=20)
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-            if self.settings.image_provider == "pollinations":
+            if self.provider == "pollinations":
                 final_prompt = prompt
                 if negative_prompt:
                     final_prompt += f". Avoid: {negative_prompt}"
@@ -68,7 +76,7 @@ class ImageGenerator:
         params = {
             "width": width,
             "height": height,
-            "model": self.settings.image_model,
+            "model": self.model,
             "seed": actual_seed,
             "nologo": "true",
         }
@@ -98,30 +106,39 @@ class ImageGenerator:
         height: int,
         seed: int | None,
     ) -> GeneratedImage:
+        configured_key = self.settings.gpt_image_api_key or self.settings.image_api_key
         api_key = (
-            self.settings.image_api_key.get_secret_value().strip()
-            if self.settings.image_api_key
-            else ""
+            configured_key.get_secret_value().strip() if configured_key else ""
         )
         if not api_key:
             raise ImageGenerationError(
-                "当前使用 OpenAI 兼容图片服务，但未配置 IMAGE_API_KEY。"
+                "GPT Image 2.5 尚未配置 API Key，请设置 GPT_IMAGE_API_KEY 或 IMAGE_API_KEY。"
             )
 
         final_prompt = prompt
         if negative_prompt:
             final_prompt += f"\nDo not include: {negative_prompt}"
+        openai_size = (
+            "1024x1024"
+            if width == height
+            else "1536x1024"
+            if width > height
+            else "1024x1536"
+        )
         payload: dict[str, object] = {
-            "model": self.settings.image_model,
+            "model": self.model,
             "prompt": final_prompt,
-            "size": f"{width}x{height}",
+            "size": openai_size,
             "n": 1,
-            "response_format": "b64_json",
         }
         if seed is not None:
             payload["seed"] = seed
 
-        endpoint = f"{self.settings.image_api_base_url.rstrip('/')}/images/generations"
+        base_url = (
+            self.settings.gpt_image_api_base_url.strip()
+            or self.settings.image_api_base_url
+        )
+        endpoint = f"{base_url.rstrip('/')}/images/generations"
         try:
             response = await client.post(
                 endpoint,

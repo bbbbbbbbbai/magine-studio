@@ -16,6 +16,10 @@ from app.schemas.generation import (
     GenerationRead,
 )
 from app.services.generation_service import process_generation
+from app.services.image_models import (
+    image_model_configured,
+    resolve_image_model,
+)
 
 router = APIRouter(prefix="/generations", tags=["generations"])
 settings = get_settings()
@@ -27,6 +31,16 @@ async def create_generation(
     background_tasks: BackgroundTasks,
     db: DbSession,
 ) -> Generation:
+    selected_model = resolve_image_model(settings, payload.image_model)
+    if not image_model_configured(settings, selected_model):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "GPT Image 2.5 尚未配置。"
+                "请在后端设置 GPT_IMAGE_API_KEY 或 IMAGE_API_KEY 后重启服务。"
+            ),
+        )
+
     width, height = RATIO_DIMENSIONS[payload.aspect_ratio]
     generation = Generation(
         prompt=payload.prompt,
@@ -37,8 +51,8 @@ async def create_generation(
         height=height,
         seed=payload.seed,
         status="pending",
-        provider=settings.image_provider,
-        model=settings.image_model,
+        provider=selected_model.provider,
+        model=selected_model.model,
         enhanced_prompt=None,
     )
     if not payload.enhance_prompt:

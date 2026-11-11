@@ -22,6 +22,7 @@ class GenerationCreate(BaseModel):
     negative_prompt: str | None = Field(default=None, max_length=1000)
     style: str = Field(default="cinematic", min_length=1, max_length=50)
     aspect_ratio: AspectRatio = "1:1"
+    image_model: str | None = Field(default=None, max_length=100)
     enhance_prompt: bool = True
     seed: int | None = Field(default=None, ge=0, le=2_147_483_647)
 
@@ -69,10 +70,22 @@ class GenerationList(BaseModel):
     offset: int
 
 
+class ImageModelOption(BaseModel):
+    id: str
+    label: str
+    provider: str
+    model: str
+    requires_api_key: bool
+    configured: bool
+    description: str
+
+
 class PublicConfig(BaseModel):
     app_name: str
     llm_model: str
     llm_configured: bool
     image_provider: str
     image_model: str
+    default_image_model: str
+    available_image_models: list[ImageModelOption]
     supported_ratios: list[str]

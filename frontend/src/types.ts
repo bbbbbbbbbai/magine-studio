@@ -25,6 +25,7 @@ export interface GenerationCreate {
   negative_prompt?: string | null;
   style: string;
   aspect_ratio: AspectRatio;
+  image_model?: string | null;
   enhance_prompt: boolean;
   seed?: number | null;
 }
@@ -42,5 +43,17 @@ export interface PublicConfig {
   llm_configured: boolean;
   image_provider: string;
   image_model: string;
+  default_image_model: string;
+  available_image_models: ImageModelOption[];
   supported_ratios: AspectRatio[];
+}
+
+export interface ImageModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  model: string;
+  requires_api_key: boolean;
+  configured: boolean;
+  description: string;
 }

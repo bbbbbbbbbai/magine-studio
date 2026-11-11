@@ -9,7 +9,7 @@
 - 数据库：PostgreSQL 16
 - 部署：Docker Compose
 - 提示词模型：默认 `deepseek-v4-flash-vision-exp`
-- 图片生成：默认 Pollinations，支持 OpenAI 兼容图片接口
+- 图片生成：可在 Flux 与 GPT Image 2.5 间切换，支持 OpenAI 兼容图片接口
 
 ## 快速启动
 
@@ -50,7 +50,29 @@
 1. LangChain + DeepSeek 将用户想法扩写为最终视觉提示词。
 2. 图片服务根据最终提示词生成位图。
 
-默认 `IMAGE_PROVIDER=pollinations`，不需要图片密钥，适合本地 MVP 演示。生产环境可以切换到任何支持 `POST {base_url}/images/generations` 的服务：
+图片模型可以在前端创作台直接切换。`Flux` 使用 Pollinations，不需要密钥；`GPT Image 2.5` 使用独立的 OpenAI 兼容图片接口：
+
+```dotenv
+# 默认打开创作台时选中的模型：flux 或 gpt-image-2.5
+IMAGE_MODEL=flux
+
+POLLINATIONS_MODEL=flux
+
+GPT_IMAGE_MODEL=gpt-image-2.5
+GPT_IMAGE_API_BASE_URL=https://api.openai.com/v1
+GPT_IMAGE_API_KEY=你的图片服务密钥
+```
+
+如果 `GPT_IMAGE_API_KEY` 为空，前端仍会显示该模型，但会标记为“待设置”并禁用生成按钮，避免提交必然失败的请求。旧的 `IMAGE_PROVIDER`、`IMAGE_API_BASE_URL` 和 `IMAGE_API_KEY` 仍可作为通用兼容配置使用。
+
+也可以把默认模型直接设为 GPT Image 2.5：
+
+```dotenv
+IMAGE_MODEL=gpt-image-2.5
+GPT_IMAGE_API_KEY=你的图片服务密钥
+```
+
+生产环境可以继续切换到任何支持 `POST {base_url}/images/generations` 的服务：
 
 ```dotenv
 IMAGE_PROVIDER=openai

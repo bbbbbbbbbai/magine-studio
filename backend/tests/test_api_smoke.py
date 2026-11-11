@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.api.routes.generations as generation_routes
+from app.core.config import get_settings
 from app.main import app
 
 
@@ -26,6 +27,13 @@ def test_api_smoke_flow(client: TestClient) -> None:
     assert config.status_code == 200
     assert config.json()["llm_model"] == "deepseek-v4-flash-vision-exp"
     assert config.json()["llm_configured"] is False
+    assert config.json()["default_image_model"] == "flux"
+    models = {
+        item["id"]: item for item in config.json()["available_image_models"]
+    }
+    assert models["flux"]["provider"] == "pollinations"
+    assert models["flux"]["configured"] is True
+    assert models["gpt-image-2.5"]["provider"] == "openai"
 
     created = client.post(
         "/api/v1/generations",
@@ -39,6 +47,8 @@ def test_api_smoke_flow(client: TestClient) -> None:
     assert created.status_code == 202
     task = created.json()
     assert task["status"] == "pending"
+    assert task["provider"] == "pollinations"
+    assert task["model"] == "flux"
     assert task["width"] == 1344
     assert task["height"] == 768
 
@@ -46,3 +56,22 @@ def test_api_smoke_flow(client: TestClient) -> None:
     assert listed.status_code == 200
     assert listed.json()["total"] >= 1
     assert any(item["id"] == task["id"] for item in listed.json()["items"])
+
+
+def test_gpt_image_requires_api_key(client: TestClient) -> None:
+    settings = get_settings()
+    if settings.gpt_image_api_key or settings.image_api_key:
+        pytest.skip("A real image API key is configured in this environment")
+
+    response = client.post(
+        "/api/v1/generations",
+        json={
+            "prompt": "放学后的天台，橘色夕阳落在少女肩头",
+            "style": "illustration",
+            "aspect_ratio": "3:4",
+            "image_model": "gpt-image-2.5",
+            "enhance_prompt": True,
+        },
+    )
+    assert response.status_code == 400
+    assert "GPT_IMAGE_API_KEY" in response.json()["detail"]

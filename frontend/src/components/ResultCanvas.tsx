@@ -3,8 +3,8 @@ import {
   Download,
   LoaderCircle,
   Maximize2,
-  Paintbrush,
   RotateCw,
+  Sparkles,
 } from "lucide-react";
 import type { Generation } from "../types";
 
@@ -14,70 +14,99 @@ interface ResultCanvasProps {
 }
 
 function formatProvider(provider: string) {
-  return provider === "pollinations" ? "Pollinations" : "OpenAI compatible";
+  if (provider === "pollinations") return "Pollinations";
+  if (provider === "openai") return "OpenAI Images";
+  return "OpenAI compatible";
 }
 
 export function ResultCanvas({ generation, hasHistory }: ResultCanvasProps) {
-  if (!generation) {
-    return (
-      <section className="stage empty-stage">
-        <div className="empty-art" aria-hidden="true">
-          <span className="orb orb-one" />
-          <span className="orb orb-two" />
-          <span className="orb orb-three" />
-          <Paintbrush size={34} />
-        </div>
-        <div className="empty-copy">
-          <span className="section-kicker">02 / 等待灵感</span>
-          <h1>让一句话，<br />成为一幅画。</h1>
-          <p>
-            {hasHistory
-              ? "从右侧历史作品中选择一张，或开始新的创作。"
-              : "在左侧描述你的想象，选择视觉风格，剩下的交给 Imagine。"}
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   const isLoading =
-    generation.status === "pending" || generation.status === "processing";
+    generation?.status === "pending" || generation?.status === "processing";
+  const isFailed = generation?.status === "failed";
+  const coverImage = generation?.image_url || "/assets/cover-01.jpg";
+  const statusLabel = !generation
+    ? hasHistory
+      ? "选择作品"
+      : "等待灵感"
+    : isLoading
+      ? "正在绘制"
+      : isFailed
+        ? "生成失败"
+        : "已完成";
+
+  function focusComposer() {
+    document.querySelector("#composer")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   return (
     <section
-      className={`stage result-stage ratio-${generation.aspect_ratio.replace(":", "-")}`}
+      className={`stage cover-stage ${
+        generation ? `ratio-${generation.aspect_ratio.replace(":", "-")}` : ""
+      }`}
       aria-live="polite"
     >
-      <div className="result-topline">
-        <span className="result-index">02 / 生成结果</span>
-        <span className={`status-pill status-${generation.status}`}>
-          {isLoading && <LoaderCircle size={12} className="spin" />}
-          {generation.status === "completed"
-            ? "已完成"
-            : generation.status === "failed"
-              ? "生成失败"
-              : "正在绘制"}
-        </span>
-      </div>
+      <div className="cover-canvas">
+        <img
+          className="cover-image"
+          src={coverImage}
+          alt={generation?.prompt || "原创轻小说封面人物插画"}
+        />
+        <div className="cover-image-mask" aria-hidden="true" />
+        <div className="manga-lines" aria-hidden="true" />
 
-      <div className="image-frame">
+        <div className="cover-series">
+          <Sparkles size={11} />
+          IMAGINE NOVELS · 青春创作社
+        </div>
+
+        <span
+          className={`cover-status ${
+            isLoading ? "working" : isFailed ? "failed" : ""
+          }`}
+        >
+          {isLoading && <LoaderCircle size={11} className="spin" />}
+          {statusLabel}
+        </span>
+
+        <span className="cover-volume">
+          03<small>VOL.</small>
+        </span>
+
+        <div className="cover-title" aria-label="我的青春灵感果然没问题">
+          <span className="prefix">我的</span>
+          <span className="line">青春灵感</span>
+          <span className="line coral">果然没问题</span>
+        </div>
+
+        <span className="cover-vertical-copy">放学后的恋爱喜剧 · 第三卷</span>
+
+        <div className="cover-tagline">
+          <strong>「这一次，灵感比告白先到。」</strong>
+          天台的风、橘色夕阳，还有没来得及说出口的那句话。
+        </div>
+
+        <span className="cover-price">IMAGINE COMICS / 定価 ¥780</span>
+
         {isLoading && (
-          <div className="generating-state">
-            <div className="generation-visual">
+          <div className="cover-loading">
+            <div className="loading-ink" aria-hidden="true">
               <span />
               <span />
               <span />
             </div>
-            <strong>构建光影与细节</strong>
-            <p>复杂画面通常需要 15–45 秒</p>
+            <strong>正在收集放课后的光</strong>
+            <p>整理人物、构图与封面色彩中</p>
             <div className="progress-track">
               <span />
             </div>
           </div>
         )}
 
-        {generation.status === "failed" && (
-          <div className="failed-state">
+        {isFailed && (
+          <div className="cover-failed">
             <span className="failed-icon">
               <AlertCircle size={23} />
             </span>
@@ -85,26 +114,29 @@ export function ResultCanvas({ generation, hasHistory }: ResultCanvasProps) {
             <p>{generation.error_message || "图片服务暂时不可用，请稍后重试。"}</p>
           </div>
         )}
-
-        {generation.status === "completed" && generation.image_url && (
-          <img
-            src={generation.image_url}
-            alt={generation.prompt}
-            className="result-image"
-          />
-        )}
       </div>
 
-      <div className="result-footer">
+      <div className="cover-footer">
         <div className="result-description">
-          <span>{generation.style}</span>
-          <h2>{generation.prompt}</h2>
-          <p>
-            {formatProvider(generation.provider)} · {generation.model} ·{" "}
-            {generation.width} × {generation.height}
-          </p>
+          <span>
+            {generation
+              ? `${generation.style} · ${generation.aspect_ratio}`
+              : "青春恋爱插画 · 3:4"}
+          </span>
+          <h2>
+            {generation?.prompt ||
+              "放课后的天台，橘色夕阳落在少女肩头，微风翻动校服衣角。"}
+          </h2>
+          {generation ? (
+            <p>
+              {formatProvider(generation.provider)} · {generation.model} ·{" "}
+              {generation.width} × {generation.height}
+            </p>
+          ) : (
+            <p>IMAGINE V2 · 1536 × 2048 · SEED 1742</p>
+          )}
         </div>
-        {generation.status === "completed" && generation.image_url && (
+        {generation?.status === "completed" && generation.image_url && (
           <div className="result-actions">
             <a
               href={generation.image_url}
@@ -125,15 +157,19 @@ export function ResultCanvas({ generation, hasHistory }: ResultCanvasProps) {
             </a>
           </div>
         )}
-        {generation.status === "failed" && (
+        {isFailed && (
           <button
             className="secondary-button"
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
+            onClick={focusComposer}
           >
             <RotateCw size={16} />
             调整后重试
+          </button>
+        )}
+        {!generation && (
+          <button className="cover-cta" type="button" onClick={focusComposer}>
+            <Sparkles size={14} />
+            {hasHistory ? "选择一幅灵感" : "开始第一幅创作"}
           </button>
         )}
       </div>

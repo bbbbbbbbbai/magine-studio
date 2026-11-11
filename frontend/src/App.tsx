@@ -22,6 +22,7 @@ export default function App() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inspirationQuery, setInspirationQuery] = useState("");
   const pollInFlight = useRef(false);
 
   const refreshGenerations = useCallback(async (silent = false) => {
@@ -101,11 +102,44 @@ export default function App() {
 
   return (
     <>
-      <Header config={config} />
+      <Header
+        config={config}
+        searchQuery={inspirationQuery}
+        onSearchChange={setInspirationQuery}
+      />
       <main className="app-shell">
+        <section className="page-intro" aria-labelledby="page-title">
+          <div>
+            <span className="eyebrow">YOUTH LIGHT NOVEL · AI VISUAL LAB</span>
+            <h1 id="page-title">
+              把平凡的一天，画成<em>青春物语</em>。
+            </h1>
+          </div>
+          <div className="issue-note">
+            <b>
+              VOL.
+              <br />
+              03
+            </b>
+            <span>
+              今日主题：放学后的风
+              <br />
+              灵感捕捉于 17:42
+            </span>
+          </div>
+        </section>
+
         <div className="workspace">
-          <PromptComposer busy={submitting} onSubmit={handleGenerate} />
-          <div className={loadingHistory ? "stage-loading" : ""}>
+          <PromptComposer
+            busy={submitting}
+            config={config}
+            searchQuery={inspirationQuery}
+            onSubmit={handleGenerate}
+          />
+          <div
+            id="stage"
+            className={loadingHistory ? "stage-loading" : ""}
+          >
             <ResultCanvas generation={activeItem} hasHistory={items.length > 0} />
           </div>
         </div>
@@ -118,8 +152,8 @@ export default function App() {
         />
 
         <footer className="page-footer">
-          <span>IMAGINE STUDIO © 2026</span>
-          <span>POWERED BY LANGCHAIN + FASTAPI</span>
+          <span>IMAGINE STUDIO © 2026 · 青春视觉实验室</span>
+          <span>轻小说封面主题 · LANGCHAIN + FASTAPI</span>
         </footer>
       </main>
 

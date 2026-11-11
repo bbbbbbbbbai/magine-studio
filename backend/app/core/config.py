@@ -33,6 +33,10 @@ class Settings(BaseSettings):
 
     image_provider: Literal["pollinations", "openai"] = "pollinations"
     image_model: str = "flux"
+    pollinations_model: str = "flux"
+    gpt_image_model: str = "gpt-image-2.5"
+    gpt_image_api_base_url: str = ""
+    gpt_image_api_key: SecretStr | None = None
     image_api_base_url: str = "https://api.openai.com/v1"
     image_api_key: SecretStr | None = None
     image_timeout_seconds: int = 150

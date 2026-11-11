@@ -30,6 +30,10 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com}
       IMAGE_PROVIDER: ${IMAGE_PROVIDER:-pollinations}
       IMAGE_MODEL: ${IMAGE_MODEL:-flux}
+      POLLINATIONS_MODEL: ${POLLINATIONS_MODEL:-flux}
+      GPT_IMAGE_MODEL: ${GPT_IMAGE_MODEL:-gpt-image-2.5}
+      GPT_IMAGE_API_BASE_URL: ${GPT_IMAGE_API_BASE_URL:-https://api.openai.com/v1}
+      GPT_IMAGE_API_KEY: ${GPT_IMAGE_API_KEY:-}
       IMAGE_API_BASE_URL: ${IMAGE_API_BASE_URL:-https://api.openai.com/v1}
       IMAGE_API_KEY: ${IMAGE_API_KEY:-}
       MEDIA_DIR: /app/media

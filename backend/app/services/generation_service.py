@@ -48,7 +48,11 @@ async def process_generation(generation_id: uuid.UUID) -> None:
                 # A committed ORM instance is expired before the next access.
                 effective_prompt = generation.enhanced_prompt or generation.prompt
 
-            image = await ImageGenerator(settings).generate(
+            image = await ImageGenerator(
+                settings,
+                provider=generation.provider,
+                model=generation.model,
+            ).generate(
                 prompt=effective_prompt,
                 negative_prompt=generation.negative_prompt,
                 width=generation.width,
