@@ -1,33 +1,30 @@
 import {
   BookOpen,
   CircleHelp,
-  Search,
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
 import type { PublicConfig } from "../types";
+
+export type WorkspaceView = "studio" | "prompt" | "archive";
 
 interface HeaderProps {
   config: PublicConfig | null;
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
+  activeView: WorkspaceView;
+  onNavigate: (view: WorkspaceView) => void;
 }
 
 const NAV_ITEMS = [
-  { id: "composer", label: "创作台" },
-  { id: "prompt-output", label: "提示词工坊" },
-  { id: "stage", label: "封面预览" },
-  { id: "history", label: "灵感档案" },
+  { id: "studio", label: "创作台" },
+  { id: "prompt", label: "提示词工坊" },
+  { id: "archive", label: "作品档案" },
 ];
 
 export function Header({
   config,
-  searchQuery,
-  onSearchChange,
+  activeView,
+  onNavigate,
 }: HeaderProps) {
-  const [activeNav, setActiveNav] = useState("composer");
-
   return (
     <>
       <header className="topbar">
@@ -71,28 +68,26 @@ export function Header({
       </header>
 
       <nav className="main-nav" aria-label="工作台导航">
-        <span className="nav-caption">快速导航</span>
+        <span className="nav-caption">工作区</span>
         {NAV_ITEMS.map((item) => (
-          <a
+          <button
             key={item.id}
-            className={`nav-link ${activeNav === item.id ? "active" : ""}`}
-            href={`#${item.id}`}
-            aria-current={activeNav === item.id ? "page" : undefined}
-            onClick={() => setActiveNav(item.id)}
+            type="button"
+            className={`nav-link ${activeView === item.id ? "active" : ""}`}
+            aria-current={activeView === item.id ? "page" : undefined}
+            onClick={() => onNavigate(item.id as WorkspaceView)}
           >
             {item.label}
-          </a>
+          </button>
         ))}
-        <label className="nav-search">
-          <span className="sr-only">搜索灵感碎片</span>
-          <Search size={14} aria-hidden="true" />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="搜索灵感，如：天台 / 逆光"
-          />
-        </label>
+        <span className="nav-spacer" />
+        <span className="nav-route-note">
+          {activeView === "studio"
+            ? "文字输入 · 图片输出"
+            : activeView === "prompt"
+              ? "标签组合 · 镜头参数"
+              : "历史生成 · 作品管理"}
+        </span>
       </nav>
     </>
   );

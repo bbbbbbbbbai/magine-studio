@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import random
+import re
 from dataclasses import dataclass
+from io import BytesIO
 from urllib.parse import quote
 
 import httpx
+from PIL import Image
 
 from app.core.config import Settings
 from app.services.exceptions import ImageGenerationError
@@ -27,6 +31,20 @@ def _extension_for_content_type(content_type: str) -> str:
     if "avif" in content_type:
         return "avif"
     return "png"
+
+
+def _remove_pollinations_watermark(content: bytes, width: int, height: int) -> bytes:
+    try:
+        with Image.open(BytesIO(content)) as image:
+            rgb = image.convert("RGB")
+            crop_height = max(24, round(rgb.height * 0.035))
+            cropped = rgb.crop((0, 0, rgb.width, max(1, rgb.height - crop_height)))
+            resized = cropped.resize((width, height), Image.Resampling.LANCZOS)
+            output = BytesIO()
+            resized.save(output, format="PNG", optimize=True)
+            return output.getvalue()
+    except (OSError, ValueError):
+        return content
 
 
 class ImageGenerator:
@@ -80,21 +98,49 @@ class ImageGenerator:
             "seed": actual_seed,
             "nologo": "true",
         }
+        for attempt in range(2):
+            try:
+                response = await client.get(url, params=params)
+            except httpx.HTTPError as exc:
+                raise ImageGenerationError(
+                    "图片服务连接失败，请稍后重试。"
+                ) from exc
+
+            if response.status_code in {402, 429} and attempt == 0:
+                retry_match = re.search(r"retry after\s+(\d+)s", response.text, re.I)
+                delay = (
+                    int(retry_match.group(1))
+                    if retry_match
+                    else int(response.headers.get("retry-after", "45"))
+                )
+                await asyncio.sleep(min(max(delay, 5), 45))
+                continue
+            break
+
+        if response.status_code in {402, 429}:
+            raise ImageGenerationError(
+                "Flux 免费额度暂时受限。请等待约 45 秒后重试，"
+                "或在服务器配置 GPT Image 2.5 的 API Key 后切换模型。"
+            )
         try:
-            response = await client.get(url, params=params)
             response.raise_for_status()
         except httpx.HTTPError as exc:
             raise ImageGenerationError(
-                "图片服务暂时不可用，请稍后重试或检查 IMAGE_PROVIDER 配置。"
+                f"Flux 图片服务返回错误 ({response.status_code})，请稍后重试。"
             ) from exc
 
         content_type = response.headers.get("content-type", "image/png").split(";")[0]
         if not content_type.startswith("image/"):
             raise ImageGenerationError("图片服务返回了无效内容，请检查服务配置。")
-        return GeneratedImage(
+        cleaned_content = _remove_pollinations_watermark(
             response.content,
-            _extension_for_content_type(content_type),
-            content_type,
+            width,
+            height,
+        )
+        return GeneratedImage(
+            cleaned_content,
+            "png",
+            "image/png",
         )
 
     async def _generate_openai_compatible(
@@ -145,9 +191,30 @@ class ImageGenerator:
                 headers={"Authorization": f"Bearer {api_key}"},
                 json=payload,
             )
+            if response.is_error:
+                try:
+                    error_body = response.json()
+                    error = error_body.get("error", {})
+                    error_code = error.get("code")
+                    error_message = error.get("message")
+                except (TypeError, ValueError):
+                    error_code = None
+                    error_message = None
+
+                if error_code == "points_insufficient":
+                    raise ImageGenerationError(
+                        "GPT Image 2.5 账户 API 积分不足。"
+                        "请先在图片服务控制台充值，再重新生成。"
+                    )
+                if error_message:
+                    raise ImageGenerationError(
+                        f"GPT Image 2.5 返回错误：{str(error_message)[:300]}"
+                    )
             response.raise_for_status()
             body = response.json()
             image_data = body["data"][0]
+        except ImageGenerationError:
+            raise
         except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as exc:
             raise ImageGenerationError(
                 "图片生成服务调用失败，请检查图片模型、尺寸与接口配置。"

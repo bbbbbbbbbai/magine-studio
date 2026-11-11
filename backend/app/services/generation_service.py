@@ -32,6 +32,9 @@ async def process_generation(generation_id: uuid.UUID) -> None:
         if generation is None:
             return
 
+        image_provider = generation.provider
+        image_model = generation.model
+
         try:
             generation.status = "processing"
             await db.commit()
@@ -50,8 +53,8 @@ async def process_generation(generation_id: uuid.UUID) -> None:
 
             image = await ImageGenerator(
                 settings,
-                provider=generation.provider,
-                model=generation.model,
+                provider=image_provider,
+                model=image_model,
             ).generate(
                 prompt=effective_prompt,
                 negative_prompt=generation.negative_prompt,

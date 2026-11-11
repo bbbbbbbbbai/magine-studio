@@ -33,6 +33,46 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             requires_api_key=True,
             description="高质量封面模型，需要配置独立 API Key",
         ),
+        ImageModelSpec(
+            id="qwen-image-3-pro",
+            label="Qwen Image 3 Pro",
+            provider="openai",
+            model="qwen-image-3-pro",
+            requires_api_key=True,
+            description="中文语义理解与文字排版表现稳定",
+        ),
+        ImageModelSpec(
+            id="z-image-pro",
+            label="Z-Image Pro",
+            provider="openai",
+            model="z-image-pro",
+            requires_api_key=True,
+            description="适合写实人物、商业视觉与高质量细节",
+        ),
+        ImageModelSpec(
+            id="anime-v4-5",
+            label="Anime V4.5",
+            provider="openai",
+            model="anime-v4-5",
+            requires_api_key=True,
+            description="通用日系动漫插画模型",
+        ),
+        ImageModelSpec(
+            id="seedream-5-pro",
+            label="Seedream 5 Pro",
+            provider="openai",
+            model="seedream-5-pro",
+            requires_api_key=True,
+            description="适合电影感场景、海报与复杂构图",
+        ),
+        ImageModelSpec(
+            id="anime-v5",
+            label="Anime V5",
+            provider="openai",
+            model="anime-v5",
+            requires_api_key=True,
+            description="更强调角色表现与动漫质感的版本",
+        ),
     )
 
 

@@ -1,9 +1,10 @@
 import { AlertTriangle, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
-import { Header } from "./components/Header";
+import { CreationStudio } from "./components/CreationStudio";
+import { Header, type WorkspaceView } from "./components/Header";
 import { HistoryPanel } from "./components/HistoryPanel";
-import { PromptComposer } from "./components/PromptComposer";
+import { PromptStudio } from "./components/PromptStudio";
 import { ResultCanvas } from "./components/ResultCanvas";
 import type {
   Generation,
@@ -22,7 +23,8 @@ export default function App() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inspirationQuery, setInspirationQuery] = useState("");
+  const [activeView, setActiveView] = useState<WorkspaceView>("studio");
+  const [draftPrompt, setDraftPrompt] = useState("");
   const pollInFlight = useRef(false);
 
   const refreshGenerations = useCallback(async (silent = false) => {
@@ -104,56 +106,66 @@ export default function App() {
     <>
       <Header
         config={config}
-        searchQuery={inspirationQuery}
-        onSearchChange={setInspirationQuery}
+        activeView={activeView}
+        onNavigate={setActiveView}
       />
       <main className="app-shell">
-        <section className="page-intro" aria-labelledby="page-title">
-          <div>
-            <span className="eyebrow">YOUTH LIGHT NOVEL · AI VISUAL LAB</span>
-            <h1 id="page-title">
-              把平凡的一天，画成<em>青春物语</em>。
-            </h1>
-          </div>
-          <div className="issue-note">
-            <b>
-              VOL.
-              <br />
-              03
-            </b>
-            <span>
-              今日主题：放学后的风
-              <br />
-              灵感捕捉于 17:42
-            </span>
-          </div>
-        </section>
+        {activeView === "studio" && (
+          <>
+            <section className="studio-intro" aria-labelledby="page-title">
+              <div>
+                <span className="eyebrow">CREATE WITH TEXT</span>
+                <h1 id="page-title">写下一句话，生成一张图。</h1>
+              </div>
+              <p>
+                创作台只负责文字输入和图片输出。需要组合人物、场景和镜头时，
+                请前往提示词工坊。
+              </p>
+            </section>
 
-        <div className="workspace">
-          <PromptComposer
-            busy={submitting}
-            config={config}
-            searchQuery={inspirationQuery}
-            onSubmit={handleGenerate}
+            <div className="studio-workspace">
+              <CreationStudio
+                busy={submitting}
+                config={config}
+                prompt={draftPrompt}
+                onPromptChange={setDraftPrompt}
+                onOpenPromptLab={() => setActiveView("prompt")}
+                onSubmit={handleGenerate}
+              />
+              <div
+                id="stage"
+                className={loadingHistory ? "stage-loading" : ""}
+              >
+                <ResultCanvas generation={activeItem} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeView === "prompt" && (
+          <PromptStudio
+            onUsePrompt={(prompt) => {
+              setDraftPrompt(prompt);
+              setActiveView("studio");
+            }}
           />
-          <div
-            id="stage"
-            className={loadingHistory ? "stage-loading" : ""}
-          >
-            <ResultCanvas generation={activeItem} hasHistory={items.length > 0} />
-          </div>
-        </div>
+        )}
 
-        <HistoryPanel
-          items={items}
-          activeId={activeId}
-          onSelect={setActiveId}
-          onDelete={handleDelete}
-        />
+        {activeView === "archive" && (
+          <HistoryPanel
+            items={items}
+            activeId={activeId}
+            onSelect={(id) => {
+              setActiveId(id);
+              setActiveView("studio");
+            }}
+            onDelete={handleDelete}
+          />
+        )}
 
         <footer className="page-footer">
-          <span>IMAGINE STUDIO © 2026 · 青春视觉实验室</span>
-          <span>轻小说封面主题 · LANGCHAIN + FASTAPI</span>
+          <span>IMAGINE STUDIO © 2026</span>
+          <span>创作台 · 提示词工坊 · 作品档案</span>
         </footer>
       </main>
 

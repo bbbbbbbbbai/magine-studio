@@ -53,7 +53,7 @@
 图片模型可以在前端创作台直接切换。`Flux` 使用 Pollinations，不需要密钥；`GPT Image 2.5` 使用独立的 OpenAI 兼容图片接口：
 
 ```dotenv
-# 默认打开创作台时选中的模型：flux 或 gpt-image-2.5
+# 默认打开创作台时选中的模型
 IMAGE_MODEL=flux
 
 POLLINATIONS_MODEL=flux
@@ -62,6 +62,19 @@ GPT_IMAGE_MODEL=gpt-image-2.5
 GPT_IMAGE_API_BASE_URL=https://api.openai.com/v1
 GPT_IMAGE_API_KEY=你的图片服务密钥
 ```
+
+当前可在创作台切换的模型包括：
+
+- `flux`
+- `gpt-image-2.5`
+- `qwen-image-3-pro`
+- `z-image-pro`
+- `anime-v4-5`
+- `seedream-5-pro`
+- `anime-v5`
+
+除 Flux 外，其余模型共用 `GPT_IMAGE_API_BASE_URL` 和
+`GPT_IMAGE_API_KEY`，也可以通过 `IMAGE_MODEL` 设置默认选中项。
 
 如果 `GPT_IMAGE_API_KEY` 为空，前端仍会显示该模型，但会标记为“待设置”并禁用生成按钮，避免提交必然失败的请求。旧的 `IMAGE_PROVIDER`、`IMAGE_API_BASE_URL` 和 `IMAGE_API_KEY` 仍可作为通用兼容配置使用。
 

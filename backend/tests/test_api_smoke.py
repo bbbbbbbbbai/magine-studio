@@ -34,6 +34,13 @@ def test_api_smoke_flow(client: TestClient) -> None:
     assert models["flux"]["provider"] == "pollinations"
     assert models["flux"]["configured"] is True
     assert models["gpt-image-2.5"]["provider"] == "openai"
+    assert {
+        "qwen-image-3-pro",
+        "z-image-pro",
+        "anime-v4-5",
+        "seedream-5-pro",
+        "anime-v5",
+    }.issubset(models)
 
     created = client.post(
         "/api/v1/generations",
