@@ -1,3 +1,5 @@
+import { createUuid } from "./uuid";
+
 const USER_ID_KEY = "imagine-studio:user-uuid:v1";
 const ACK_KEY = "imagine-studio:user-uuid-ack:v1";
 
@@ -15,7 +17,7 @@ export function getOrCreateUserId() {
   } catch {
     // Fall through and create a session UUID when storage is unavailable.
   }
-  const created = crypto.randomUUID().toLowerCase();
+  const created = createUuid();
   try {
     window.localStorage.setItem(USER_ID_KEY, created);
   } catch {

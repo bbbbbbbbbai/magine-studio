@@ -1,3 +1,5 @@
+import { createUuid } from "./uuid";
+
 export const MAX_REFERENCE_IMAGES = 4;
 export const MAX_REFERENCE_FILE_BYTES = 15 * 1024 * 1024;
 
@@ -46,7 +48,7 @@ export async function prepareReferenceImage(
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
   return {
-    id: crypto.randomUUID(),
+    id: createUuid(),
     name: file.name || "参考图",
     dataUrl: canvas.toDataURL("image/jpeg", 0.88),
   };
