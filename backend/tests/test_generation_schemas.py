@@ -25,3 +25,11 @@ def test_blank_negative_prompt_becomes_none() -> None:
 def test_invalid_aspect_ratio_is_rejected() -> None:
     with pytest.raises(ValidationError):
         GenerationCreate(prompt="微光中的森林", aspect_ratio="2:1")
+
+
+def test_reference_image_count_is_limited() -> None:
+    with pytest.raises(ValidationError):
+        GenerationCreate(
+            prompt="微光中的森林",
+            reference_images=["data:image/png;base64,AA=="] * 5,
+        )

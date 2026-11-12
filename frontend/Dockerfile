@@ -3,6 +3,10 @@
 FROM node:22-alpine AS build
 
 WORKDIR /app
+ARG VITE_REFERENCE_DATA_BASE=https://raw.githubusercontent.com/anhao/ai-pose-gallery-zh/main
+ARG VITE_REFERENCE_ASSET_BASE=https://ai-pose-gallery.anhao.app
+ENV VITE_REFERENCE_DATA_BASE=$VITE_REFERENCE_DATA_BASE
+ENV VITE_REFERENCE_ASSET_BASE=$VITE_REFERENCE_ASSET_BASE
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --prefer-offline --no-audit --no-fund

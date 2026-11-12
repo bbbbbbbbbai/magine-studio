@@ -3,6 +3,7 @@ export type AspectRatio = "1:1" | "4:3" | "3:4" | "16:9" | "9:16";
 
 export interface Generation {
   id: string;
+  user_uuid: string | null;
   prompt: string;
   enhanced_prompt: string | null;
   negative_prompt: string | null;
@@ -15,6 +16,7 @@ export interface Generation {
   provider: string;
   model: string;
   image_url: string | null;
+  reference_images: string[];
   error_message: string | null;
   created_at: string;
   completed_at: string | null;
@@ -26,6 +28,7 @@ export interface GenerationCreate {
   style: string;
   aspect_ratio: AspectRatio;
   image_model?: string | null;
+  reference_images?: string[];
   enhance_prompt: boolean;
   seed?: number | null;
 }
@@ -55,5 +58,15 @@ export interface ImageModelOption {
   model: string;
   requires_api_key: boolean;
   configured: boolean;
+  supports_references: boolean;
   description: string;
+}
+
+export type UserRole = "root" | "guest";
+
+export interface UserProfile {
+  id: string;
+  role: UserRole;
+  created_at: string;
+  last_seen_at: string;
 }

@@ -13,6 +13,7 @@ from app.db.models.generation import Generation
 from app.db.session import AsyncSessionLocal
 from app.services.image_service import ImageGenerator
 from app.services.llm_service import PromptEnhancer
+from app.services.reference_service import resolve_reference_paths
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -61,6 +62,10 @@ async def process_generation(generation_id: uuid.UUID) -> None:
                 width=generation.width,
                 height=generation.height,
                 seed=generation.seed,
+                reference_images=resolve_reference_paths(
+                    generation.reference_images,
+                    settings.media_dir,
+                ),
             )
 
             extension = image.extension

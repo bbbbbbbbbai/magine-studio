@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -32,8 +33,9 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.4
 
     image_provider: Literal["pollinations", "openai"] = "pollinations"
-    image_model: str = "flux"
+    image_model: str = "z-image-2.5"
     pollinations_model: str = "flux"
+    z_image_model: str = "z-image-2.5"
     gpt_image_model: str = "gpt-image-2.5"
     gpt_image_api_base_url: str = ""
     gpt_image_api_key: SecretStr | None = None
@@ -43,6 +45,7 @@ class Settings(BaseSettings):
 
     media_dir: Path = Path("media")
     allowed_origins: str = "http://localhost:5173,http://localhost:3000"
+    root_user_uuid: str | None = None
 
     @property
     def cors_origins(self) -> list[str]:
@@ -51,6 +54,16 @@ class Settings(BaseSettings):
     @property
     def llm_enabled(self) -> bool:
         return bool(self.llm_api_key and self.llm_api_key.get_secret_value().strip())
+
+    @property
+    def root_user_id(self) -> uuid.UUID | None:
+        value = (self.root_user_uuid or "").strip()
+        if not value:
+            return None
+        try:
+            return uuid.UUID(value)
+        except ValueError:
+            return None
 
 
 @lru_cache

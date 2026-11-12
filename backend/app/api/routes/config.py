@@ -30,6 +30,7 @@ async def public_config() -> PublicConfig:
                 model=spec.model,
                 requires_api_key=spec.requires_api_key,
                 configured=image_model_configured(settings, spec),
+                supports_references=spec.supports_references,
                 description=spec.description,
             )
             for spec in image_model_specs(settings)

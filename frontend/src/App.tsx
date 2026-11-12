@@ -4,16 +4,42 @@ import { api } from "./api";
 import { CreationStudio } from "./components/CreationStudio";
 import { Header, type WorkspaceView } from "./components/Header";
 import { HistoryPanel } from "./components/HistoryPanel";
+import { IdentityDialog } from "./components/IdentityDialog";
 import { PromptStudio } from "./components/PromptStudio";
+import { ReferenceLibrary } from "./components/ReferenceLibrary";
 import { ResultCanvas } from "./components/ResultCanvas";
+import {
+  loadSavedReferenceRecipe,
+  saveReferenceRecipe,
+} from "./reference-library";
 import type {
   Generation,
   GenerationCreate,
   PublicConfig,
+  UserProfile,
 } from "./types";
+import {
+  acknowledgeUserId,
+  getOrCreateUserId,
+  isUserIdAcknowledged,
+  replaceUserId,
+} from "./user-identity";
 
 function isWorking(item: Generation) {
   return item.status === "pending" || item.status === "processing";
+}
+
+function viewFromHash(): WorkspaceView {
+  const view = window.location.hash.slice(1);
+  if (
+    view === "studio" ||
+    view === "reference" ||
+    view === "prompt" ||
+    view === "archive"
+  ) {
+    return view;
+  }
+  return "studio";
 }
 
 export default function App() {
@@ -23,8 +49,17 @@ export default function App() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<WorkspaceView>("studio");
+  const [userId, setUserId] = useState(getOrCreateUserId);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [identityOpen, setIdentityOpen] = useState(
+    () => !isUserIdAcknowledged(),
+  );
+  const [activeView, setActiveView] =
+    useState<WorkspaceView>(viewFromHash);
   const [draftPrompt, setDraftPrompt] = useState("");
+  const [referenceRecipe, setReferenceRecipe] = useState(
+    loadSavedReferenceRecipe,
+  );
   const pollInFlight = useRef(false);
 
   const refreshGenerations = useCallback(async (silent = false) => {
@@ -48,14 +83,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void refreshGenerations();
+    let active = true;
+    setItems([]);
+    setActiveId(null);
+    setUser(null);
+    api
+      .initializeUser(userId)
+      .then((profile) => {
+        if (active) setUser(profile);
+      })
+      .catch((err: unknown) => {
+        if (active) {
+          setError(
+            err instanceof Error ? err.message : "无法初始化用户身份",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) void refreshGenerations();
+      });
     api
       .config()
       .then(setConfig)
       .catch(() => {
         // The editor remains usable even if the lightweight config endpoint fails.
       });
-  }, [refreshGenerations]);
+    return () => {
+      active = false;
+    };
+  }, [refreshGenerations, userId]);
+
+  useEffect(() => {
+    saveReferenceRecipe(referenceRecipe);
+  }, [referenceRecipe]);
+
+  useEffect(() => {
+    window.history.replaceState(null, "", `#${activeView}`);
+  }, [activeView]);
 
   useEffect(() => {
     if (!items.some(isWorking)) return;
@@ -100,14 +164,32 @@ export default function App() {
     }
   }
 
+  function closeIdentity() {
+    acknowledgeUserId();
+    setIdentityOpen(false);
+  }
+
+  function restoreIdentity(nextId: string) {
+    try {
+      const normalized = replaceUserId(nextId);
+      acknowledgeUserId();
+      setUserId(normalized);
+      setItems([]);
+      setActiveId(null);
+      setIdentityOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "无法恢复该 UUID");
+    }
+  }
+
   const activeItem = items.find((item) => item.id === activeId) ?? null;
 
   return (
     <>
       <Header
-        config={config}
         activeView={activeView}
         onNavigate={setActiveView}
+        onOpenIdentity={() => setIdentityOpen(true)}
       />
       <main className="app-shell">
         {activeView === "studio" && (
@@ -118,8 +200,8 @@ export default function App() {
                 <h1 id="page-title">写下一句话，生成一张图。</h1>
               </div>
               <p>
-                创作台只负责文字输入和图片输出。需要组合人物、场景和镜头时，
-                请前往提示词工坊。
+                从一句描述开始，或用角色图库组合人像、服装与姿势。
+                参考配方会自动转成提示词。
               </p>
             </section>
 
@@ -130,6 +212,16 @@ export default function App() {
                 prompt={draftPrompt}
                 onPromptChange={setDraftPrompt}
                 onOpenPromptLab={() => setActiveView("prompt")}
+                onOpenReference={() => setActiveView("reference")}
+                referenceRecipe={referenceRecipe}
+                onClearReferences={() =>
+                  setReferenceRecipe((current) => ({
+                    ...current,
+                    portrait: null,
+                    costume: null,
+                    pose: null,
+                  }))
+                }
                 onSubmit={handleGenerate}
               />
               <div
@@ -140,6 +232,19 @@ export default function App() {
               </div>
             </div>
           </>
+        )}
+
+        {activeView === "reference" && (
+          <ReferenceLibrary
+            recipe={referenceRecipe}
+            isRoot={user?.role === "root"}
+            onRecipeChange={setReferenceRecipe}
+            onUseRecipe={(prompt) => {
+              setDraftPrompt(prompt);
+              setActiveView("studio");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
         )}
 
         {activeView === "prompt" && (
@@ -165,9 +270,16 @@ export default function App() {
 
         <footer className="page-footer">
           <span>IMAGINE STUDIO © 2026</span>
-          <span>创作台 · 提示词工坊 · 作品档案</span>
+          <span>创作台 · 角色图库 · 提示词工坊 · 作品档案</span>
         </footer>
       </main>
+
+      <IdentityDialog
+        open={identityOpen}
+        userId={userId}
+        onClose={closeIdentity}
+        onRestore={restoreIdentity}
+      />
 
       {error && (
         <div className="toast" role="alert">

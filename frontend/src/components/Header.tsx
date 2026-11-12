@@ -1,29 +1,24 @@
-import {
-  BookOpen,
-  CircleHelp,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
-import type { PublicConfig } from "../types";
+import { Sparkles, UserRound } from "lucide-react";
 
-export type WorkspaceView = "studio" | "prompt" | "archive";
+export type WorkspaceView = "studio" | "reference" | "prompt" | "archive";
 
 interface HeaderProps {
-  config: PublicConfig | null;
   activeView: WorkspaceView;
   onNavigate: (view: WorkspaceView) => void;
+  onOpenIdentity: () => void;
 }
 
 const NAV_ITEMS = [
   { id: "studio", label: "创作台" },
+  { id: "reference", label: "角色图库" },
   { id: "prompt", label: "提示词工坊" },
   { id: "archive", label: "作品档案" },
 ];
 
 export function Header({
-  config,
   activeView,
   onNavigate,
+  onOpenIdentity,
 }: HeaderProps) {
   return (
     <>
@@ -39,29 +34,13 @@ export function Header({
         </a>
 
         <div className="topbar-actions">
-          <span className="model-status">
-            <i className={config?.llm_configured ? "online" : ""} />
-            {config?.llm_configured ? "DeepSeek 灵感引擎已连接" : "本地提示词模式"}
-          </span>
           <button
-            className="icon-button desktop-only"
+            className="avatar-button"
             type="button"
-            aria-label="查看使用提示"
-            title="选择灵感碎片即可自动组合提示词"
+            aria-label="查看我的 UUID"
+            title="我的 UUID"
+            onClick={onOpenIdentity}
           >
-            <CircleHelp size={17} />
-          </button>
-          <a
-            className="icon-button docs-button"
-            href="/api/docs"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="打开 API 文档"
-            title="API 文档"
-          >
-            <BookOpen size={17} />
-          </a>
-          <button className="avatar-button" type="button" aria-label="个人中心">
             <UserRound size={17} />
           </button>
         </div>
@@ -84,6 +63,8 @@ export function Header({
         <span className="nav-route-note">
           {activeView === "studio"
             ? "文字输入 · 图片输出"
+            : activeView === "reference"
+              ? "人像 · 服装 · 姿势"
             : activeView === "prompt"
               ? "标签组合 · 镜头参数"
               : "历史生成 · 作品管理"}

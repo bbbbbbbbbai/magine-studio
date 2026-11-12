@@ -20,14 +20,62 @@ If the user provides things to avoid, state them naturally as exclusions in the 
 
 def _local_enhancement(prompt: str, style: str, aspect_ratio: str) -> str:
     style_map = {
-        "cinematic": "cinematic photography, dramatic natural light, detailed textures",
-        "photography": "editorial photography, realistic detail, natural color grading",
-        "illustration": "refined digital illustration, expressive shapes, rich color",
-        "3d": "high-end 3D render, tactile materials, soft studio lighting",
-        "watercolor": "delicate watercolor painting, layered pigment, textured paper",
-        "graphic": "minimal graphic design, bold composition, clean negative space",
+        "none": (
+            "follow the user's visual direction and reference image "
+            "without adding a style preset"
+        ),
+        "realistic": (
+            "realistic editorial portrait photography, natural skin texture, "
+            "85mm lens, soft flattering light"
+        ),
+        "fashion": (
+            "Korean and Japanese fashion magazine editorial, minimal studio set, "
+            "polished color grading, refined styling"
+        ),
+        "film": (
+            "35mm vintage Fujifilm portrait photography, subtle film grain, "
+            "warm nostalgic color, natural street lighting"
+        ),
+        "semi_real": (
+            "2.5D semi-realistic game character illustration, painterly light "
+            "and shadow, refined facial features, detailed fabric and metal"
+        ),
+        "anime": (
+            "refined Japanese anime illustration, clean cel shading blended with "
+            "painterly highlights, transparent vivid color"
+        ),
+        "cel_anime": (
+            "Makoto Shinkai inspired animated film still, luminous volumetric "
+            "light, rich atmospheric color, detailed hair highlights"
+        ),
+        "manga": (
+            "Japanese black-and-white manga artwork, precise G-pen ink lines, "
+            "detailed screentone shading"
+        ),
+        "render3d": (
+            "Unreal Engine 5 and Octane Render next-generation 3D character "
+            "render, subsurface skin, cinematic studio lighting"
+        ),
+        "toy": (
+            "premium painted PVC collectible figure, softbox studio lighting, "
+            "precise material highlights, macro depth of field"
+        ),
+        "cyberpunk": (
+            "cyberpunk neon visual, rainy night rim lighting, cold and warm "
+            "reflections, futuristic cinematic atmosphere"
+        ),
+        "concept_sheet": (
+            "character concept sheet, full-body character design, pure clean "
+            "white background, even diffuse lighting, clear clothing construction"
+        ),
     }
-    visual_style = style_map.get(style, f"{style} visual style")
+    visual_style = style_map.get(style, style if style != "none" else "")
+    if not visual_style:
+        return (
+            f"{prompt}. Balanced {aspect_ratio} composition, faithful to the requested "
+            "visual direction, high visual detail, no watermarks, no captions, "
+            "no unintended text."
+        )
     return (
         f"{prompt}. {visual_style}. Strong focal point, balanced {aspect_ratio} composition, "
         "high visual detail, no watermarks, no captions, no unintended text."

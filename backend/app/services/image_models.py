@@ -12,6 +12,7 @@ class ImageModelSpec:
     provider: str
     model: str
     requires_api_key: bool
+    supports_references: bool
     description: str
 
 
@@ -23,7 +24,17 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="pollinations",
             model=settings.pollinations_model,
             requires_api_key=False,
+            supports_references=False,
             description="免费快速模型，适合草稿与日常创作",
+        ),
+        ImageModelSpec(
+            id="z-image-2.5",
+            label="Z-image2.5",
+            provider="openai",
+            model=settings.z_image_model,
+            requires_api_key=True,
+            supports_references=True,
+            description="默认角色与参考图模型，支持多参考图编辑",
         ),
         ImageModelSpec(
             id="gpt-image-2.5",
@@ -31,6 +42,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model=settings.gpt_image_model,
             requires_api_key=True,
+            supports_references=True,
             description="高质量封面模型，需要配置独立 API Key",
         ),
         ImageModelSpec(
@@ -39,6 +51,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model="qwen-image-3-pro",
             requires_api_key=True,
+            supports_references=True,
             description="中文语义理解与文字排版表现稳定",
         ),
         ImageModelSpec(
@@ -47,6 +60,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model="z-image-pro",
             requires_api_key=True,
+            supports_references=True,
             description="适合写实人物、商业视觉与高质量细节",
         ),
         ImageModelSpec(
@@ -55,6 +69,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model="anime-v4-5",
             requires_api_key=True,
+            supports_references=True,
             description="通用日系动漫插画模型",
         ),
         ImageModelSpec(
@@ -63,6 +78,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model="seedream-5-pro",
             requires_api_key=True,
+            supports_references=True,
             description="适合电影感场景、海报与复杂构图",
         ),
         ImageModelSpec(
@@ -71,6 +87,7 @@ def image_model_specs(settings: Settings) -> tuple[ImageModelSpec, ...]:
             provider="openai",
             model="anime-v5",
             requires_api_key=True,
+            supports_references=True,
             description="更强调角色表现与动漫质感的版本",
         ),
     )
@@ -92,6 +109,7 @@ def resolve_image_model(
         provider=settings.image_provider,
         model=identifier,
         requires_api_key=settings.image_provider == "openai",
+        supports_references=settings.image_provider == "openai",
         description="由环境变量配置的自定义图片模型",
     )
 

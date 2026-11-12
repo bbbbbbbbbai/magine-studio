@@ -29,8 +29,9 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com}
       IMAGE_PROVIDER: ${IMAGE_PROVIDER:-pollinations}
-      IMAGE_MODEL: ${IMAGE_MODEL:-flux}
+      IMAGE_MODEL: ${IMAGE_MODEL:-z-image-2.5}
       POLLINATIONS_MODEL: ${POLLINATIONS_MODEL:-flux}
+      Z_IMAGE_MODEL: ${Z_IMAGE_MODEL:-z-image-2.5}
       GPT_IMAGE_MODEL: ${GPT_IMAGE_MODEL:-gpt-image-2.5}
       GPT_IMAGE_API_BASE_URL: ${GPT_IMAGE_API_BASE_URL:-https://api.openai.com/v1}
       GPT_IMAGE_API_KEY: ${GPT_IMAGE_API_KEY:-}
@@ -38,6 +39,7 @@ services:
       IMAGE_API_KEY: ${IMAGE_API_KEY:-}
       MEDIA_DIR: /app/media
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      ROOT_USER_UUID: ${ROOT_USER_UUID:-}
     volumes:
       - generated_images:/app/media
     depends_on:
@@ -59,6 +61,9 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_REFERENCE_DATA_BASE: ${VITE_REFERENCE_DATA_BASE:-https://raw.githubusercontent.com/anhao/ai-pose-gallery-zh/main}
+        VITE_REFERENCE_ASSET_BASE: ${VITE_REFERENCE_ASSET_BASE:-https://ai-pose-gallery.anhao.app}
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3000}:80"

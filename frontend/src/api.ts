@@ -3,7 +3,9 @@ import type {
   GenerationCreate,
   GenerationList,
   PublicConfig,
+  UserProfile,
 } from "./types";
+import { getOrCreateUserId } from "./user-identity";
 
 const API_ROOT = import.meta.env.VITE_API_URL || "/api/v1";
 
@@ -12,6 +14,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      "X-User-ID": getOrCreateUserId(),
       ...init?.headers,
     },
   });
@@ -41,6 +44,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   config: () => request<PublicConfig>("/config"),
+  initializeUser: (id: string) =>
+    request<UserProfile>("/users/initialize", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    }),
+  currentUser: () => request<UserProfile>("/users/me"),
   listGenerations: (limit = 40) =>
     request<GenerationList>(`/generations?limit=${limit}`),
   getGeneration: (id: string) =>
