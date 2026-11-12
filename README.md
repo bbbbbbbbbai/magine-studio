@@ -146,6 +146,68 @@ ROOT_USER_UUID=e8b2ee31-0e36-4d52-a601-ab37d18bf6d5
 移动端 H5 布局不会渲染 API 文档入口、素材原站链接和“查看原图”等外部跳转入口；
 桌面端仍保留这些开发与素材溯源入口。
 
+## GitHub CI/CD
+
+仓库内置两个 GitHub Actions 工作流：
+
+- `.github/workflows/ci.yml`：PR 和 `main` 推送时运行前后端测试、Lint、前端构建和镜像构建校验。
+- `.github/workflows/deploy.yml`：CI 成功后构建前后端镜像并推送到 GHCR；配置部署变量后可通过 SSH 自动更新服务器。
+
+镜像地址：
+
+```text
+ghcr.io/bbbbbbbbbai/magine-studio/backend:latest
+ghcr.io/bbbbbbbbbai/magine-studio/frontend:latest
+```
+
+在 GitHub 仓库的 `Settings -> Secrets and variables -> Actions` 中配置自动部署：
+
+Repository Variables：
+
+```text
+DEPLOY_ENABLED=true
+DEPLOY_PATH=/opt/magine-studio
+SSH_PORT=22
+RELEASE_PORT=3001
+```
+
+Repository Secrets：
+
+```text
+SSH_HOST
+SSH_USER
+SSH_PRIVATE_KEY
+SSH_KNOWN_HOSTS
+```
+
+服务器首次准备：
+
+```bash
+git clone https://github.com/bbbbbbbbbai/magine-studio.git /opt/magine-studio
+cd /opt/magine-studio
+cp .env.example .env
+# 编辑 .env，至少填写 ROOT_USER_UUID、GPT_IMAGE_API_KEY 和图片接口地址
+chmod +x scripts/deploy-server.sh
+```
+
+GHCR 镜像包为私有状态时，需要在服务器先登录一次：
+
+```bash
+echo "你的-GitHub-Token" | docker login ghcr.io -u 你的GitHub用户名 --password-stdin
+```
+
+也可以在 GitHub Packages 中把两个容器包改为公开。自动发布使用独立
+Compose 项目 `imagine-studio-release` 和独立数据卷，默认监听 `3001` 端口，
+不会覆盖现有 `APP_PORT` 服务。验证新版本后，可将域名或反向代理切换到发布端口。
+
+自动部署会执行：
+
+```text
+git pull -> docker compose pull -> docker compose up -> alembic upgrade head
+```
+
+未设置 `DEPLOY_ENABLED=true` 时只运行 CI 和 GHCR 镜像发布，不会改动服务器。
+
 ## 项目结构
 
 ```text

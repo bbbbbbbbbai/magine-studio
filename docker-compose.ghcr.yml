@@ -1,0 +1,6 @@
+services:
+  backend:
+    image: ${GHCR_IMAGE_BASE:-ghcr.io/bbbbbbbbbai/magine-studio}/backend:${DEPLOY_IMAGE_TAG:-latest}
+
+  frontend:
+    image: ${GHCR_IMAGE_BASE:-ghcr.io/bbbbbbbbbai/magine-studio}/frontend:${DEPLOY_IMAGE_TAG:-latest}
